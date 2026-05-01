@@ -1,6 +1,8 @@
 require('dotenv').config()
 const mqtt = require('mqtt')
 const { createClient } = require('@supabase/supabase-js')
+const { Redis } = require('@upstash/redis')
+const http = require('http')
 
 const MQTT_HOST = `wss://${process.env.MQTT_HOST}:8884/mqtt`
 const MQTT_USERNAME = process.env.MQTT_USERNAME
@@ -9,6 +11,10 @@ const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_KEY
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+})
 
 const client = mqtt.connect(MQTT_HOST, {
   username: MQTT_USERNAME,
@@ -42,14 +48,16 @@ client.on('message', async (topic, message) => {
   
   if (error) console.log('Erreur Supabase:', error.message)
   else console.log(`✅ ${capteur}: ${valeur} ${unites[capteur]}`)
+
+  await redis.set(`capteur:${capteur}`, valeur)
+  console.log(`Redis mis à jour → capteur:${capteur} = ${valeur}`)
 })
 
 client.on('error', (err) => {
   console.log('Erreur de connexion:', err.message)
 })
-const http = require('http')
-const PORT = process.env.PORT || 3000
 
+const PORT = process.env.PORT || 3000
 http.createServer((req, res) => {
   res.writeHead(200)
   res.end('Agri Server Running ✅')
