@@ -12,6 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",
+    "@upstash/redis": "^1.37.0",
     "dotenv": "^17.4.2",
     "mqtt": "^5.15.1"
   }
