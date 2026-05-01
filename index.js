@@ -78,7 +78,8 @@ client.on('message', async (topic, message) => {
         type: `low_${capteur}`,
         message: `${capteur} trop bas (${valeur} ${unites[capteur] || ''})`,
         severity: 'critical',
-        resolved: false
+        resolved: false,
+         timestamp: new Date()
       })
       console.log(`🚨 Alerte : ${capteur} trop bas`)
     } else if (valeur > seuil.max) {
@@ -86,7 +87,8 @@ client.on('message', async (topic, message) => {
         type: `high_${capteur}`,
         message: `${capteur} trop élevé (${valeur} ${unites[capteur] || ''})`,
         severity: 'medium',
-        resolved: false
+        resolved: false,
+        timestamp: new Date()
       })
       console.log(`⚠️ Alerte : ${capteur} trop élevé`)
     }
