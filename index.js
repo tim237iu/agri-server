@@ -16,6 +16,21 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 })
 
+// Charger les seuils dans Redis au démarrage
+async function chargerSeuils() {
+  const { data, error } = await supabase.from('seuils').select('*')
+  if (error) return console.log('Erreur chargement seuils:', error.message)
+  
+  for (const seuil of data) {
+    await redis.set(`seuil:${seuil.capteur}`, JSON.stringify({
+      min: seuil.valeur_min,
+      max: seuil.valeur_max
+    }))
+  }
+  console.log('Seuils chargés dans Redis ✅')
+}
+
+chargerSeuils()
 const client = mqtt.connect(MQTT_HOST, {
   username: MQTT_USERNAME,
   password: MQTT_PASSWORD,
@@ -42,6 +57,7 @@ client.on('message', async (topic, message) => {
     'niveau_eau': 'cm'
   }
   
+  // Stocker dans Supabase
   const { error } = await supabase
     .from('releves')
     .insert({ capteur, valeur, unite: unites[capteur] || '' })
@@ -49,8 +65,32 @@ client.on('message', async (topic, message) => {
   if (error) console.log('Erreur Supabase:', error.message)
   else console.log(`✅ ${capteur}: ${valeur} ${unites[capteur]}`)
 
+  // Mettre à jour Redis
   await redis.set(`capteur:${capteur}`, valeur)
-  console.log(`Redis mis à jour → capteur:${capteur} = ${valeur}`)
+
+  // Vérifier les seuils
+  const seuilData = await redis.get(`seuil:${capteur}`)
+  if (seuilData) {
+    const seuil = JSON.parse(seuilData)
+    
+    if (valeur < seuil.min) {
+      await supabase.from('alerts').insert({
+        type: `low_${capteur}`,
+        message: `${capteur} trop bas (${valeur} ${unites[capteur] || ''})`,
+        severity: 'critical',
+        resolved: false
+      })
+      console.log(`🚨 Alerte : ${capteur} trop bas`)
+    } else if (valeur > seuil.max) {
+      await supabase.from('alerts').insert({
+        type: `high_${capteur}`,
+        message: `${capteur} trop élevé (${valeur} ${unites[capteur] || ''})`,
+        severity: 'medium',
+        resolved: false
+      })
+      console.log(`⚠️ Alerte : ${capteur} trop élevé`)
+    }
+  }
 })
 
 client.on('error', (err) => {
