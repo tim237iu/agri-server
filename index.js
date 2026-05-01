@@ -47,3 +47,12 @@ client.on('message', async (topic, message) => {
 client.on('error', (err) => {
   console.log('Erreur de connexion:', err.message)
 })
+const http = require('http')
+const PORT = process.env.PORT || 3000
+
+http.createServer((req, res) => {
+  res.writeHead(200)
+  res.end('Agri Server Running ✅')
+}).listen(PORT, () => {
+  console.log(`Serveur HTTP actif sur port ${PORT}`)
+})
