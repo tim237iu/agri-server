@@ -71,7 +71,7 @@ client.on('message', async (topic, message) => {
   // Vérifier les seuils
   const seuilData = await redis.get(`seuil:${capteur}`)
   if (seuilData) {
-    const seuil = JSON.parse(seuilData)
+    const seuil = typeof seuilData === 'string' ? JSON.parse(seuilData) : seuilData
     
     if (valeur < seuil.min) {
       await supabase.from('alerts').insert({
