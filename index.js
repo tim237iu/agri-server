@@ -118,3 +118,21 @@ app.put('/seuils/:capteur', express.json(), async (req, res) => {
   if (error) return res.status(500).json({ error: error.message })
   res.json({ message: `Seuils de ${capteur} mis à jour ✅` })
 })
+
+// Contrôle des actionneurs
+app.post('/actionneurs/:nom', express.json(), (req, res) => {
+  const { nom } = req.params
+  const { etat } = req.body // "ON" ou "OFF"
+  
+  const actionneurs = ['pompe', 'ventilateur', 'eclairage']
+  
+  if (!actionneurs.includes(nom)) {
+    return res.status(400).json({ error: `Actionneur "${nom}" inconnu` })
+  }
+  
+  client.publish(`agri/actionneurs/${nom}`, etat, (err) => {
+    if (err) return res.status(500).json({ error: 'Erreur publication MQTT' })
+    console.log(`Actionneur ${nom} → ${etat}`)
+    res.json({ message: `${nom} ${etat} ✅` })
+  })
+})
