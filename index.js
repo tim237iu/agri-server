@@ -2,7 +2,7 @@ require('dotenv').config()
 const mqtt = require('mqtt')
 const { createClient } = require('@supabase/supabase-js')
 
-const MQTT_HOST = `mqtt://${process.env.MQTT_HOST}:8883/mqtt`
+const MQTT_HOST = `wss://${process.env.MQTT_HOST}:8884/mqtt`
 const MQTT_USERNAME = process.env.MQTT_USERNAME
 const MQTT_PASSWORD = process.env.MQTT_PASSWORD
 const SUPABASE_URL = process.env.SUPABASE_URL
