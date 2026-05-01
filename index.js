@@ -57,10 +57,40 @@ client.on('error', (err) => {
   console.log('Erreur de connexion:', err.message)
 })
 
+const express = require('express')
+const app = express()
 const PORT = process.env.PORT || 3000
-http.createServer((req, res) => {
-  res.writeHead(200)
-  res.end('Agri Server Running ✅')
-}).listen(PORT, () => {
+
+// Route santé
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Agri Server Running ✅' })
+})
+
+// Dernières valeurs depuis Redis
+app.get('/capteurs/latest', async (req, res) => {
+  const capteurs = ['temperature', 'humidite_sol', 'humidite_air', 'luminosite', 'co2', 'niveau_eau']
+  const data = {}
+  
+  for (const capteur of capteurs) {
+    const valeur = await redis.get(`capteur:${capteur}`)
+    data[capteur] = valeur
+  }
+  
+  res.json(data)
+})
+
+// Historique depuis Supabase
+app.get('/capteurs/historique', async (req, res) => {
+  const { data, error } = await supabase
+    .from('releves')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(100)
+  
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data)
+})
+
+app.listen(PORT, () => {
   console.log(`Serveur HTTP actif sur port ${PORT}`)
 })
