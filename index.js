@@ -1,22 +1,26 @@
-const mqtt = require('mqtt')
-const { createClient } = require('@supabase/supabase-js')
-
 require('dotenv').config()
 const mqtt = require('mqtt')
 const { createClient } = require('@supabase/supabase-js')
 
-const MQTT_HOST = `wss://${process.env.MQTT_HOST}:8884/mqtt`
+const MQTT_HOST = `mqtt://${process.env.MQTT_HOST}:8883/mqtt`
 const MQTT_USERNAME = process.env.MQTT_USERNAME
 const MQTT_PASSWORD = process.env.MQTT_PASSWORD
-
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_KEY
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+
 const client = mqtt.connect(MQTT_HOST, {
   username: MQTT_USERNAME,
   password: MQTT_PASSWORD,
   rejectUnauthorized: false
+})
+
+client.on('connect', () => {
+  console.log('Connecté à HiveMQ ✅')
+  client.subscribe('agri/capteurs/#', (err) => {
+    if (!err) console.log('Souscrit aux topics capteurs ✅')
+  })
 })
 
 client.on('message', async (topic, message) => {
@@ -38,10 +42,6 @@ client.on('message', async (topic, message) => {
   
   if (error) console.log('Erreur Supabase:', error.message)
   else console.log(`✅ ${capteur}: ${valeur} ${unites[capteur]}`)
-})
-
-client.on('message', (topic, message) => {
-  console.log(`Topic: ${topic} | Message: ${message.toString()}`)
 })
 
 client.on('error', (err) => {
