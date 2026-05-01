@@ -94,3 +94,27 @@ app.get('/capteurs/historique', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Serveur HTTP actif sur port ${PORT}`)
 })
+
+// Lire les seuils
+app.get('/seuils', async (req, res) => {
+  const { data, error } = await supabase
+    .from('seuils')
+    .select('*')
+  
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data)
+})
+
+// Modifier un seuil
+app.put('/seuils/:capteur', express.json(), async (req, res) => {
+  const { capteur } = req.params
+  const { valeur_min, valeur_max } = req.body
+  
+  const { data, error } = await supabase
+    .from('seuils')
+    .update({ valeur_min, valeur_max, updated_at: new Date() })
+    .eq('capteur', capteur)
+  
+  if (error) return res.status(500).json({ error: error.message })
+  res.json({ message: `Seuils de ${capteur} mis à jour ✅` })
+})
