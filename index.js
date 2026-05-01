@@ -136,3 +136,28 @@ app.post('/actionneurs/:nom', express.json(), (req, res) => {
     res.json({ message: `${nom} ${etat} ✅` })
   })
 })
+
+// Lire les alertes
+app.get('/alertes', async (req, res) => {
+  const { data, error } = await supabase
+    .from('alerts')
+    .select('*')
+    .order('timestamp', { ascending: false })
+    .limit(50)
+  
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data)
+})
+
+// Marquer une alerte comme résolue
+app.put('/alertes/:id/resolve', express.json(), async (req, res) => {
+  const { id } = req.params
+  
+  const { error } = await supabase
+    .from('alerts')
+    .update({ resolved: true, resolved_at: new Date() })
+    .eq('id', id)
+  
+  if (error) return res.status(500).json({ error: error.message })
+  res.json({ message: `Alerte ${id} résolue ✅` })
+})
