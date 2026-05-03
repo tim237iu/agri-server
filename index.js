@@ -103,6 +103,26 @@ const express = require('express')
 const app = express()
 const PORT = process.env.PORT || 3000
 
+// Middleware API Key
+const authenticateApiKey = (req, res, next) => {
+  const authHeader = req.headers['authorization']
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Accès non autorisé — API Key manquante' })
+  }
+  
+  const apiKey = authHeader.split(' ')[1]
+  
+  if (apiKey !== process.env.API_KEY) {
+    return res.status(403).json({ error: 'API Key invalide' })
+  }
+  
+  next()
+}
+
+// Appliquer sur toutes les routes
+app.use(authenticateApiKey)
+
 // Route santé
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Agri Server Running ✅' })
