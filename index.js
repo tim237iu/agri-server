@@ -9,6 +9,7 @@ const MQTT_USERNAME = process.env.MQTT_USERNAME
 const MQTT_PASSWORD = process.env.MQTT_PASSWORD
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_KEY
+const { Parser } = require('json2csv')
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 const redis = new Redis({
@@ -183,4 +184,21 @@ app.put('/alertes/:id/resolve', express.json(), async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Serveur HTTP actif sur port ${PORT}`)
+})
+// Export CSV
+app.get('/export/csv', async (req, res) => {
+  const { data, error } = await supabase
+    .from('releves')
+    .select('*')
+    .order('created_at', { ascending: false })
+  
+  if (error) return res.status(500).json({ error: error.message })
+  
+  const fields = ['id', 'capteur', 'valeur', 'unite', 'created_at']
+  const parser = new Parser({ fields })
+  const csv = parser.parse(data)
+  
+  res.header('Content-Type', 'text/csv')
+  res.attachment('releves.csv')
+  res.send(csv)
 })
