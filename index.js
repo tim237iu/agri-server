@@ -203,3 +203,22 @@ app.put('/alertes/:id/resolve', express.json(), async (req, res) => {
   if (error) return res.status(500).json({ error: error.message })
   res.json({ message: `Alerte ${id} résolue ✅` })
 })
+// Middleware API Key
+const authenticateApiKey = (req, res, next) => {
+  const authHeader = req.headers['authorization']
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Accès non autorisé — API Key manquante' })
+  }
+  
+  const apiKey = authHeader.split(' ')[1]
+  
+  if (apiKey !== process.env.API_KEY) {
+    return res.status(403).json({ error: 'API Key invalide' })
+  }
+  
+  next()
+}
+
+// Appliquer sur toutes les routes
+app.use(authenticateApiKey)
